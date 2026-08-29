@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>相紙沖印 — 風格轉換工作台</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Bitter:wght@400;600;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap');
+  :root{
+    --bg:#17140f; --panel:#221d17; --panel-2:#2b241b; --line:#3c3327;
+    --text:#f2ece1; --muted:#a99d8a; --safelight:#d6452c; --amber:#e8b04b; --ok:#7fae6a;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(214,69,44,0.10), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(232,176,75,0.08), transparent 55%),
+      var(--bg);
+    color:var(--text); font-family:'Inter',sans-serif; min-height:100vh; padding:32px 20px 80px;
+  }
+  .wrap{max-width:1040px; margin:0 auto;}
+  header{margin-bottom:36px;}
+  .eyebrow{font-family:'JetBrains Mono',monospace; font-size:12px; letter-spacing:.14em; color:var(--amber); text-transform:uppercase; margin-bottom:10px;}
+  h1{font-family:'Bitter',serif; font-weight:800; font-size:clamp(28px,4vw,42px); margin:0 0 10px; letter-spacing:-.01em;}
+  .sub{color:var(--muted); font-size:15px; max-width:640px; line-height:1.6;}
+  .filmstrip{margin-top:26px; display:flex; align-items:center; border:1px solid var(--line); background:linear-gradient(180deg, #0f0d0a, #14110d); border-radius:10px; overflow:hidden;}
+  .sprockets{display:flex; flex-direction:column; justify-content:space-around; padding:8px 6px; gap:4px;}
+  .sprockets span{width:8px;height:8px;border-radius:2px;background:#000;box-shadow:inset 0 0 0 1px var(--line);}
+  .filmstrip .frame{flex:1; padding:14px 20px; font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--muted); display:flex; justify-content:space-between; gap:20px; flex-wrap:wrap;}
+  .filmstrip .frame b{color:var(--text); font-weight:600;}
+  .filmstrip .frame .accent{color:var(--amber);}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:24px; margin-bottom:20px;}
+  .card h2{font-family:'Bitter',serif; font-size:18px; margin:0 0 4px; display:flex; align-items:baseline; gap:10px;}
+  .card h2 .step{font-family:'JetBrains Mono',monospace; font-size:12px; color:var(--safelight); border:1px solid var(--safelight); border-radius:20px; padding:2px 9px;}
+  .card p.hint{color:var(--muted); font-size:13.5px; margin:6px 0 16px; line-height:1.6;}
+  .cautionbox{display:flex; gap:12px; align-items:flex-start; background:#2e2510; border:1px solid var(--amber); border-radius:10px; padding:14px 16px; font-size:13.5px; line-height:1.7; color:#f0deb0;}
+  .cautionbox b{color:#fff;}
+  .cautionbox a{color:var(--amber);}
+  .keyrow{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:14px;}
+  input[type=text], input[type=password], textarea{
+    background:var(--panel-2); border:1px solid var(--line); color:var(--text); border-radius:8px;
+    padding:11px 13px; font-family:'Inter',sans-serif; font-size:14px; width:100%;
+  }
+  textarea{resize:vertical; min-height:70px; font-family:'JetBrains Mono',monospace; font-size:13px;}
+  input::placeholder, textarea::placeholder{color:#6f6555;}
+  .keyrow input{flex:1; min-width:220px;}
+  a.link{color:var(--amber); text-decoration:none; border-bottom:1px dotted var(--amber);}
+  a.link:hover{color:#fff;}
+  .dropzone{border:1.5px dashed var(--line); border-radius:10px; padding:28px; text-align:center; cursor:pointer; transition:.15s; background:var(--panel-2);}
+  .dropzone:hover, .dropzone.drag{border-color:var(--safelight); background:#2c2118;}
+  .dropzone span.big{display:block; font-size:14.5px; margin-bottom:4px;}
+  .dropzone span.small{display:block; font-size:12.5px; color:var(--muted); font-family:'JetBrains Mono',monospace;}
+  #fileInput{display:none;}
+  .preview-row{display:flex; gap:16px; margin-top:16px; flex-wrap:wrap;}
+  .preview-box{flex:1; min-width:180px; border:1px solid var(--line); border-radius:8px; overflow:hidden; background:#0f0d0a; display:flex; align-items:center; justify-content:center; max-height:220px;}
+  .preview-box img{max-width:100%; max-height:220px; display:block;}
+  .preview-label{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:.08em;}
+  .style-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; margin-bottom:6px;}
+  .style-btn{border:1px solid var(--line); background:var(--panel-2); color:var(--text); padding:12px 10px; border-radius:8px; cursor:pointer; font-family:'Inter',sans-serif; font-size:13px; text-align:left; transition:.12s;}
+  .style-btn small{display:block; color:var(--muted); font-size:11px; margin-top:2px;}
+  .style-btn:hover{border-color:var(--amber);}
+  .style-btn.active{border-color:var(--safelight); background:#3a2013; box-shadow:0 0 0 1px var(--safelight) inset;}
+  label.field-label{font-family:'JetBrains Mono',monospace; font-size:11.5px; color:var(--amber); text-transform:uppercase; letter-spacing:.08em; display:block; margin:16px 0 8px;}
+  .slider-row{display:flex; align-items:center; gap:12px;}
+  input[type=range]{flex:1; accent-color:var(--safelight);}
+  .slider-val{font-family:'JetBrains Mono',monospace; font-size:12.5px; color:var(--muted); width:42px; text-align:right;}
+  .run-btn{width:100%; background:var(--safelight); color:#fff; border:none; padding:15px 20px; border-radius:9px; font-size:15px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; letter-spacing:.01em; transition:.15s;}
+  .run-btn:hover:not(:disabled){background:#b93a22;}
+  .run-btn:disabled{background:#4a3f33; color:#8a7d68; cursor:not-allowed;}
+  .progress{margin-top:16px; display:none;}
+  .progress.show{display:block;}
+  .steps-status{display:flex; flex-direction:column; gap:8px; font-family:'JetBrains Mono',monospace; font-size:13px;}
+  .steps-status .row{display:flex; align-items:center; gap:10px; color:var(--muted);}
+  .steps-status .row.active{color:var(--amber);}
+  .steps-status .row.done{color:var(--ok);}
+  .dot{width:8px;height:8px;border-radius:50%; background:var(--line); flex-shrink:0;}
+  .row.active .dot{background:var(--amber); animation:pulse 1s infinite;}
+  .row.done .dot{background:var(--ok);}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.3;}}
+  .result-wrap{display:none; margin-top:16px;}
+  .result-wrap.show{display:block;}
+  .result-strip{background:repeating-conic-gradient(#2a251d 0% 25%, #221d17 0% 50%) 50% / 16px 16px; border:1px solid var(--line); border-radius:8px; padding:14px; display:flex; justify-content:center; overflow:auto;}
+  .result-strip img{max-width:100%; border-radius:2px;}
+  .dl-row{display:flex; gap:10px; margin-top:14px; flex-wrap:wrap;}
+  .dl-btn{background:var(--panel-2); border:1px solid var(--amber); color:var(--amber); padding:10px 16px; border-radius:8px; cursor:pointer; font-size:13.5px; font-family:'Inter',sans-serif; text-decoration:none; display:inline-flex; align-items:center; gap:6px;}
+  .dl-btn:hover{background:#3a2f1e;}
+  .err{background:#3a1912; border:1px solid var(--safelight); color:#f3b9a9; padding:12px 14px; border-radius:8px; font-size:13.5px; margin-top:14px; display:none; line-height:1.6;}
+  .err.show{display:block;}
+  .note{font-size:12.5px; color:var(--muted); line-height:1.7; margin-top:10px;}
+  .note b{color:var(--text);}
+  footer{text-align:center; color:var(--muted); font-size:12px; margin-top:40px; font-family:'JetBrains Mono',monospace;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">雲林智慧教育中心 · 相片工作台</div>
+    <h1>人像風格轉換　沖印排版工具</h1>
+    <p class="sub">上傳一張人像照片，套用畫風、姿勢與背景後自動延伸畫面，輸出成固定尺寸的相紙，可直接送印。使用 Agnes AI 圖生圖模型運作。</p>
+    <div class="filmstrip">
+      <div class="sprockets"><span></span><span></span><span></span><span></span><span></span></div>
+      <div class="frame">
+        <div>輸出尺寸　<b>高 8cm × 寬 22cm</b></div>
+        <div>解析度　<b class="accent">300 DPI</b></div>
+        <div>像素　<b id="pxReadout">945 × 2598 px</b></div>
+        <div>比例　<b>22 : 8</b></div>
+      </div>
+      <div class="sprockets"><span></span><span></span><span></span><span></span><span></span></div>
+    </div>
+  </header>
+
+  <!-- STEP 0: KEY -->
+  <div class="card">
+    <h2><span class="step">準備</span> Agnes AI API 金鑰</h2>
+    <div class="keyrow">
+      <input type="password" id="apiKeyAgnes" placeholder="貼上你的 Agnes AI API Key">
+    </div>
+    <p class="note">前往 <a class="link" href="https://platform.agnes-ai.com/settings/apiKeys" target="_blank">platform.agnes-ai.com</a> 免費申請。金鑰只留在這個分頁裡，不會被上傳到別處。</p>
+  </div>
+
+  <!-- STEP 1: UPLOAD -->
+  <div class="card">
+    <h2><span class="step">1</span> 上傳照片</h2>
+    <p class="hint">建議上傳人物主體清楚、背景單純的直式或方形照片，效果最穩定。</p>
+    <div class="dropzone" id="dropzone">
+      <span class="big">點擊選擇照片，或將檔案拖曳到這裡</span>
+      <span class="small">JPG / PNG，建議長邊 1000px 以上</span>
+      <input type="file" id="fileInput" accept="image/*">
+    </div>
+    <div class="preview-row" id="previewRow" style="display:none;">
+      <div class="preview-box"><div><div class="preview-label">原始照片</div><img id="origPreview"></div></div>
+    </div>
+  </div>
+
+  <!-- STEP 2: STYLE -->
+  <div class="card">
+    <h2><span class="step">2</span> 選擇風格</h2>
+    <p class="hint">AI 會盡量保持人物臉部、姿勢與身份不變，只改變畫風。服裝維持照片原樣，不提供更改服裝的選項。</p>
+    <div class="style-grid" id="agnesStyleGrid">
+      <button class="style-btn" data-prompt="keep this as a natural, realistic photograph, do not stylize into a cartoon, anime, or illustration, preserve authentic photographic detail, natural skin texture, and realistic lighting exactly as in the original photo">📷 原始真人風格<small>維持真實照片質感</small></button>
+      <button class="style-btn" data-prompt="redraw this photo in the style of a Studio Ghibli / Hayao Miyazaki animated film, soft painterly backgrounds, warm nostalgic color palette, gentle hand-drawn line art, whimsical atmosphere">🌿 宮崎駿吉卜力風<small>手繪水彩感</small></button>
+      <button class="style-btn" data-prompt="redraw this photo in the style of a modern Disney/Pixar 3D animated movie, big expressive eyes, smooth stylized 3D character shading, vibrant colorful lighting">🏰 迪士尼皮克斯風<small>3D動畫質感</small></button>
+      <button class="style-btn" data-prompt="restyle this photo like a cinematic Korean drama promotional still, soft glowing skin tones, warm backlight, dreamy bokeh background, pastel color grading">💌 韓劇偶像質感<small>柔光唯美</small></button>
+      <button class="style-btn" data-prompt="restyle this photo like a 1990s Hong Kong film poster, moody neon-lit night atmosphere, grainy film texture, bold dramatic lighting, retro color grading">🌃 復古港片海報風<small>霓虹懷舊</small></button>
+      <button class="style-btn" data-prompt="redraw this photo in traditional Chinese ink wash painting (shui-mo) style, expressive brush strokes, monochrome ink tones with subtle color wash, flowing rice-paper texture">🖌️ 中國水墨畫風<small>寫意筆觸</small></button>
+      <button class="style-btn" data-prompt="reimagine everyone in this photo as LEGO minifigure style characters, glossy plastic texture, blocky simplified shapes, bright toy-like colors, studio product photography lighting">🧱 樂高積木公仔風<small>玩具感</small></button>
+      <button class="style-btn" data-prompt="restyle this photo as a stop-motion claymation scene, soft clay texture with visible fingerprints and imperfections, warm handcrafted lighting, felt and miniature set aesthetic">🎞️ 黏土定格動畫風<small>手作質感</small></button>
+      <button class="style-btn" data-prompt="restyle this photo in a retro synthwave/vaporwave aesthetic, neon pink and cyan color grading, glowing grid horizon, 1980s retro-futuristic atmosphere">🌆 蒸氣波合成風<small>霓虹未來感</small></button>
+    </div>
+    <label class="field-label">或自訂風格描述（英文效果較穩定）</label>
+    <textarea id="customPrompt" placeholder="例如：convert into a dreamy pastel storybook illustration style..."></textarea>
+  </div>
+
+  <!-- STEP 3: POSE -->
+  <div class="card">
+    <h2><span class="step">3</span> 選擇姿勢（可選）</h2>
+    <p class="hint">固定的姿勢選項，不開放自訂文字描述。預設維持照片原本的姿勢。</p>
+    <div class="style-grid" id="poseGrid">
+      <button class="style-btn active" data-pose="">🙆 維持原姿勢<small>不調整</small></button>
+      <button class="style-btn" data-pose="everyone standing naturally and smiling warmly at the camera">😊 自然站姿微笑<small>正面看鏡頭</small></button>
+      <button class="style-btn" data-pose="everyone making a heart shape with their hands">💗 手比愛心<small>可愛互動</small></button>
+      <button class="style-btn" data-pose="everyone jumping slightly in the air with joyful energetic expressions">🤸 跳躍動感<small>活力氛圍</small></button>
+      <button class="style-btn" data-pose="everyone giving a thumbs up with a cheerful expression">👍 比讚手勢<small>陽光正向</small></button>
+      <button class="style-btn" data-pose="everyone standing arm in arm like close friends, warm genuine smiles">🤝 勾肩搭背<small>團隊感</small></button>
+    </div>
+  </div>
+
+  <!-- STEP 4: BACKGROUND -->
+  <div class="card">
+    <h2><span class="step">4</span> 選擇背景</h2>
+    <p class="hint">AI 會直接畫出指定的背景場景來填滿兩側，而不是硬「延伸」原本的畫面，較不容易出現破圖或條紋。</p>
+    <div class="style-grid" id="backgroundGrid">
+      <button class="style-btn active" data-bg="extend">🖼️ 延伸原背景<small>沿用照片場景</small></button>
+      <button class="style-btn" data-bg="forest">🌲 森林綠地<small>自然光</small></button>
+      <button class="style-btn" data-bg="beach">🌅 黃昏海邊<small>金色夕陽</small></button>
+      <button class="style-btn" data-bg="city">🏙️ 城市街景<small>燈火街道</small></button>
+      <button class="style-btn" data-bg="town">🏘️ 歐式小鎮<small>石板小徑</small></button>
+      <button class="style-btn" data-bg="night">🌌 星空夜景<small>浪漫月光</small></button>
+      <button class="style-btn" data-bg="autumn">🍂 秋楓庭園<small>暖調落葉</small></button>
+      <button class="style-btn" data-bg="snow">❄️ 雪景<small>冷調靜謐</small></button>
+      <button class="style-btn" data-bg="festival">🎪 繽紛慶典<small>燈串氛圍</small></button>
+      <button class="style-btn" data-bg="gradient">🎨 純色漸層<small>不呼叫AI，本地生成</small></button>
+      <button class="style-btn" data-bg="random">🎲 隨機生成<small>讓AI自由發揮</small></button>
+    </div>
+  </div>
+
+  <!-- STEP 5: RUN -->
+  <div class="card">
+    <h2><span class="step">5</span> 產生沖印檔</h2>
+    <p class="hint">每張約需 10–40 秒，速度取決於 API 當下負載。</p>
+
+    <label class="field-label">馬克杯邊框（四周淡出）</label>
+    <div class="style-grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr));">
+      <button class="style-btn active" data-border="white">⚪ 白色淡出<small>適合熱昇華馬克杯</small></button>
+      <button class="style-btn" data-border="beige">🟤 米色淡出<small>暖調柔和</small></button>
+      <button class="style-btn" data-border="off">❌ 不加邊框<small>滿版印到邊緣</small></button>
+    </div>
+    <label class="field-label">邊框淡出寬度</label>
+    <div class="slider-row">
+      <input type="range" id="borderSlider" min="3" max="20" value="9">
+      <div class="slider-val" id="borderVal">9%</div>
+    </div>
+    <label class="field-label">邊界不規則程度</label>
+    <div class="slider-row">
+      <input type="range" id="irregularSlider" min="0" max="100" value="55">
+      <div class="slider-val" id="irregularVal">55%</div>
+    </div>
+
+    <button class="run-btn" id="runBtn" disabled>請先上傳照片並選擇風格</button>
+
+    <div class="progress" id="progress">
+      <div class="steps-status">
+        <div class="row" id="rowStyle"><div class="dot"></div> 步驟一：套用風格與姿勢</div>
+        <div class="row" id="rowPad"><div class="dot"></div> 步驟二：合成延伸畫布</div>
+        <div class="row" id="rowExtend"><div class="dot"></div> 步驟三：延伸背景填滿版面</div>
+        <div class="row" id="rowFinal"><div class="dot"></div> 步驟四：裁切為精確沖印尺寸</div>
+      </div>
+    </div>
+
+    <div class="err" id="errBox"></div>
+
+    <div class="result-wrap" id="resultWrap">
+      <div class="result-strip"><img id="resultImg"></div>
+      <div class="dl-row">
+        <a class="dl-btn" id="dlBtn" download="photo-print-8x22cm.png">⬇ 下載 PNG（945×2598px, 300DPI）</a>
+        <button class="dl-btn" id="retryBtn">↻ 重新生成這張</button>
+      </div>
+      <p class="note"><b>列印提醒：</b>PNG 檔本身只記錄像素，不會自動帶入「公分」資訊。送印時請手動將圖片尺寸設定為 <b>高 8cm × 寬 22cm</b>（300 DPI 已對應 945×2598px）。</p>
+    </div>
+  </div>
+
+  <footer>使用 Agnes AI 免費 API（agnes-image-2.1-flash）· 請先閱讀上方隱私須知</footer>
+</div>
+
+<script>
+const TARGET_W = 2598, TARGET_H = 945;
+document.getElementById('pxReadout').textContent = `${TARGET_H} × ${TARGET_W} px`;
+
+let uploadedFile = null;
+let selectedAgnesPrompt = null;
+let selectedPose = '';
+let selectedBackground = 'extend';
+let borderMode = 'white';
+
+const dropzone = document.getElementById('dropzone');
+const fileInput = document.getElementById('fileInput');
+const previewRow = document.getElementById('previewRow');
+const origPreview = document.getElementById('origPreview');
+const runBtn = document.getElementById('runBtn');
+const errBox = document.getElementById('errBox');
+
+dropzone.addEventListener('click', () => fileInput.click());
+dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag'); });
+dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag'));
+dropzone.addEventListener('drop', e => { e.preventDefault(); dropzone.classList.remove('drag'); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+function handleFile(file){
+  uploadedFile = file;
+  origPreview.src = URL.createObjectURL(file);
+  previewRow.style.display = 'flex';
+  updateRunState();
+}
+
+const agnesGrid = document.getElementById('agnesStyleGrid');
+const customPrompt = document.getElementById('customPrompt');
+agnesGrid.querySelectorAll('.style-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    agnesGrid.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedAgnesPrompt = btn.dataset.prompt;
+    customPrompt.value = '';
+    updateRunState();
+  });
+});
+customPrompt.addEventListener('input', () => {
+  if (customPrompt.value.trim()){
+    agnesGrid.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
+    selectedAgnesPrompt = customPrompt.value.trim();
+  } else {
+    const active = agnesGrid.querySelector('.style-btn.active');
+    selectedAgnesPrompt = active ? active.dataset.prompt : null;
+  }
+  updateRunState();
+});
+
+const poseGrid = document.getElementById('poseGrid');
+poseGrid.querySelectorAll('.style-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    poseGrid.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedPose = btn.dataset.pose;
+  });
+});
+
+const backgroundGrid = document.getElementById('backgroundGrid');
+backgroundGrid.querySelectorAll('.style-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    backgroundGrid.querySelectorAll('.style-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedBackground = btn.dataset.bg;
+  });
+});
+
+const borderButtons = document.querySelectorAll('[data-border]');
+borderButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    borderButtons.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    borderMode = btn.dataset.border;
+  });
+});
+const borderSlider = document.getElementById('borderSlider');
+const borderVal = document.getElementById('borderVal');
+borderSlider.addEventListener('input', () => { borderVal.textContent = borderSlider.value + '%'; });
+const irregularSlider = document.getElementById('irregularSlider');
+const irregularVal = document.getElementById('irregularVal');
+irregularSlider.addEventListener('input', () => { irregularVal.textContent = irregularSlider.value + '%'; });
+
+function updateRunState(){
+  if (uploadedFile && selectedAgnesPrompt){
+    runBtn.disabled = false;
+    runBtn.textContent = '產生沖印檔';
+  } else {
+    runBtn.disabled = true;
+    runBtn.textContent = uploadedFile ? '請選擇一種風格' : '請先上傳照片並選擇風格';
+  }
+}
+
+function setRow(id, state){ const row = document.getElementById(id); row.classList.remove('active','done'); if (state) row.classList.add(state); }
+function resetRows(){ ['rowStyle','rowPad','rowExtend','rowFinal'].forEach(id => setRow(id, null)); }
+function showError(msg){ errBox.textContent = msg; errBox.classList.add('show'); }
+function clearError(){ errBox.classList.remove('show'); errBox.textContent=''; }
+function loadImage(src){ return new Promise((resolve, reject) => { const img = new Image(); img.crossOrigin='anonymous'; img.onload = () => resolve(img); img.onerror = reject; img.src = src; }); }
+function newCanvas(w,h){ const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+function fileToDataURL(file){ return new Promise((resolve, reject) => { const r = new FileReader(); r.onload = () => resolve(r.result); r.onerror = reject; r.readAsDataURL(file); }); }
+
+const AGNES_RATIOS = {'1:1':1, '3:4':0.75, '4:3':1.3333, '16:9':1.7778, '9:16':0.5625, '2:3':0.6667, '3:2':1.5, '21:9':2.3333};
+function closestAgnesRatio(w, h){
+  const target = w / h;
+  let best = '1:1', bestDiff = Infinity;
+  for (const key in AGNES_RATIOS){
+    const diff = Math.abs(AGNES_RATIOS[key] - target);
+    if (diff < bestDiff){ bestDiff = diff; best = key; }
+  }
+  return best;
+}
+
+const PRESERVE_CLAUSE = "do not change, move, stretch or resize the people in the center at all, keep their body proportions exactly as they are, keep them sharp and in focus, keep their clothing exactly as in the original photo";
+function themedBgPrompt(desc){
+  return `Replace the entire background of this image with a coherent ${desc}, extending seamlessly and consistently across the full wide canvas including directly behind the people and on both side areas — there should be no visible seam, box, rectangle, or any leftover trace of the original background anywhere in the image. ${PRESERVE_CLAUSE}`;
+}
+const BACKGROUND_PROMPTS = {
+  extend: `seamlessly extend and blend the existing background scenery on the left and right side of the image to naturally fill the entire wide canvas, matching the existing art style, lighting and color palette, remove any hard edges, seams or repeating patterns, ${PRESERVE_CLAUSE}`,
+  forest: themedBgPrompt("lush green forest / park scenery in soft natural daylight, matching the subject's art style and lighting"),
+  beach: themedBgPrompt("warm golden-hour beach and ocean horizon scenery, soft warm sunset light, matching the subject's art style and lighting"),
+  city: themedBgPrompt("lively city street scenery with buildings and soft bokeh city lights, matching the subject's art style and lighting"),
+  town: themedBgPrompt("charming European small-town scenery with cobblestone streets, cozy houses and trees, matching the subject's art style and lighting"),
+  night: themedBgPrompt("dreamy starry night sky scenery with soft moonlight and twinkling stars, matching the subject's art style and lighting"),
+  autumn: themedBgPrompt("cozy autumn garden scenery with golden and red fallen leaves, warm soft light, matching the subject's art style and lighting"),
+  snow: themedBgPrompt("gentle snowy winter landscape with soft falling snow, cool crisp light, matching the subject's art style and lighting"),
+  festival: themedBgPrompt("colorful festive celebration backdrop with soft bokeh string lights and confetti, joyful warm atmosphere, matching the subject's art style and lighting"),
+  random: `Creatively design and replace the entire background of this image with a scene that best complements the subject, mood and art style, extending seamlessly and consistently across the full wide canvas including directly behind the people and on both side areas — no visible seam, box, rectangle, or leftover trace of the original background. ${PRESERVE_CLAUSE}`
+};
+
+function averageEdgeColor(img, side){
+  const sampleW = Math.max(1, Math.round(img.width * 0.04));
+  const c = newCanvas(sampleW, img.height);
+  const ctx = c.getContext('2d');
+  if (side === 'left') ctx.drawImage(img, 0, 0, sampleW, img.height, 0, 0, sampleW, img.height);
+  else ctx.drawImage(img, img.width - sampleW, 0, sampleW, img.height, 0, 0, sampleW, img.height);
+  const data = ctx.getImageData(0, 0, sampleW, img.height).data;
+  let r=0,g=0,b=0,n=0;
+  for (let i=0;i<data.length;i+=4){ r+=data[i]; g+=data[i+1]; b+=data[i+2]; n++; }
+  return `rgb(${Math.round(r/n)}, ${Math.round(g/n)}, ${Math.round(b/n)})`;
+}
+
+/* Fades the photo's own edges to white on all four sides — used for dye-sublimation
+   mug printing, where a hard photo edge shows as a visible seam on the wrap-around print.
+   Done per-pixel with a noise-perturbed distance field, so the fade boundary is soft and
+   organically irregular rather than a clean geometric rounded-rectangle edge. */
+function valueNoise2D(gridW, gridH){
+  const grid = [];
+  for (let j = 0; j <= gridH; j++){
+    const row = [];
+    for (let i = 0; i <= gridW; i++) row.push(Math.random());
+    grid.push(row);
+  }
+  return function(u, v){
+    const gx = u * gridW, gy = v * gridH;
+    const x0 = Math.floor(gx), y0 = Math.floor(gy);
+    const x1 = Math.min(x0 + 1, gridW), y1 = Math.min(y0 + 1, gridH);
+    const sx = gx - x0, sy = gy - y0;
+    const n00 = grid[y0][x0], n10 = grid[y0][x1], n01 = grid[y1][x0], n11 = grid[y1][x1];
+    const nx0 = n00 * (1 - sx) + n10 * sx;
+    const nx1 = n01 * (1 - sx) + n11 * sx;
+    return nx0 * (1 - sy) + nx1 * sy;
+  };
+}
+function addFadeBorder(sourceCanvas, borderPct, irregularity, color){
+  const w = sourceCanvas.width, h = sourceCanvas.height;
+  const featherPx = Math.max(4, h * (borderPct / 100));
+  const noiseAmp = featherPx * (irregularity != null ? irregularity : 0.6);
+  const noiseFn = valueNoise2D(22, 8);
+  const cr = color.r, cg = color.g, cb = color.b;
+
+  const srcCtx = sourceCanvas.getContext('2d');
+  const srcData = srcCtx.getImageData(0, 0, w, h);
+  const out = newCanvas(w, h);
+  const outCtx = out.getContext('2d');
+  const outData = outCtx.createImageData(w, h);
+  const sd = srcData.data, od = outData.data;
+
+  for (let y = 0; y < h; y++){
+    for (let x = 0; x < w; x++){
+      let dist = Math.min(x, w - 1 - x, y, h - 1 - y);
+      const n = (noiseFn(x / w, y / h) - 0.5) * 2 * noiseAmp;
+      dist += n;
+      let alpha = dist / featherPx;
+      if (alpha < 0) alpha = 0; else if (alpha > 1) alpha = 1;
+      alpha = alpha * alpha * (3 - 2 * alpha); // smoothstep
+      const idx = (y * w + x) * 4;
+      od[idx]   = sd[idx]   * alpha + cr * (1 - alpha);
+      od[idx+1] = sd[idx+1] * alpha + cg * (1 - alpha);
+      od[idx+2] = sd[idx+2] * alpha + cb * (1 - alpha);
+      od[idx+3] = 255;
+    }
+  }
+  outCtx.putImageData(outData, 0, 0);
+  return out;
+}
+const BORDER_COLORS = { white: {r:255,g:255,b:255}, beige: {r:237,g:225,b:201} };
+
+async function callAgnes(apiKey, imageDataUrl, prompt, sizeTier, ratio){
+  const body = {
+    model: 'agnes-image-2.1-flash',
+    prompt: prompt,
+    size: sizeTier || '2K',
+    extra_body: { image: [imageDataUrl], response_format: 'b64_json' }
+  };
+  if (ratio) body.ratio = ratio;
+  const res = await fetch('https://apihub.agnes-ai.com/v1/images/generations', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+    body: JSON.stringify(body)
+  });
+  if (!res.ok){
+    const t = await res.text().catch(()=>'');
+    throw new Error(`Agnes API 回應錯誤 (${res.status})：${t.slice(0,200)}`);
+  }
+  const data = await res.json();
+  const item = data.data && data.data[0];
+  if (!item) throw new Error('Agnes AI 沒有回傳圖片資料，請重試一次。');
+  if (item.b64_json) return 'data:image/png;base64,' + item.b64_json;
+  if (item.url) return item.url;
+  throw new Error('無法解析 Agnes AI 回傳的圖片格式。');
+}
+
+document.getElementById('runBtn').addEventListener('click', runPipeline);
+document.getElementById('retryBtn').addEventListener('click', runPipeline);
+
+async function runPipeline(){
+  clearError();
+  if (!uploadedFile || !selectedAgnesPrompt){ showError('請先上傳照片並選擇風格。'); return; }
+  const apiKey = document.getElementById('apiKeyAgnes').value.trim();
+  if (!apiKey){ showError('請先貼上 Agnes AI API Key。'); return; }
+
+  runBtn.disabled = true;
+  document.getElementById('progress').classList.add('show');
+  document.getElementById('resultWrap').classList.remove('show');
+  resetRows();
+
+  try {
+    setRow('rowStyle','active');
+    const origDataUrl = await fileToDataURL(uploadedFile);
+    const origImgForRatio = await loadImage(origDataUrl);
+    const matchedRatio = closestAgnesRatio(origImgForRatio.width, origImgForRatio.height);
+    let stylePrompt = selectedAgnesPrompt + ", while preserving the exact original body proportions, framing, and camera angle of every person, keeping their clothing exactly as in the original photo, do not stretch, elongate, squeeze or distort anyone";
+    if (selectedPose){
+      stylePrompt += `. Adjust everyone's pose to: ${selectedPose}, while keeping their faces, identities, and original clothing unchanged.`;
+    }
+    const styledSrc = await callAgnes(apiKey, origDataUrl, stylePrompt, '2K', matchedRatio);
+    const styledImg = await loadImage(styledSrc);
+    setRow('rowStyle','done');
+
+    setRow('rowPad','active');
+    const padCanvas = newCanvas(TARGET_W, TARGET_H); const pctx = padCanvas.getContext('2d');
+    const scale = TARGET_H/styledImg.height, drawW = styledImg.width*scale, drawX=(TARGET_W-drawW)/2;
+    if (drawX > 0){
+      pctx.fillStyle = averageEdgeColor(styledImg, 'left');
+      pctx.fillRect(0, 0, drawX, TARGET_H);
+      pctx.fillStyle = averageEdgeColor(styledImg, 'right');
+      pctx.fillRect(drawX + drawW, 0, TARGET_W - drawX - drawW, TARGET_H);
+    }
+    pctx.drawImage(styledImg, drawX, 0, drawW, TARGET_H);
+    setRow('rowPad','done');
+
+    setRow('rowExtend','active');
+    let extendedImg;
+    if (selectedBackground === 'gradient'){
+      const leftColor = averageEdgeColor(styledImg, 'left');
+      const rightColor = averageEdgeColor(styledImg, 'right');
+      const gCanvas = newCanvas(TARGET_W, TARGET_H); const gctx = gCanvas.getContext('2d');
+      const grad = gctx.createLinearGradient(0, 0, TARGET_W, 0);
+      grad.addColorStop(0, leftColor); grad.addColorStop(0.5, leftColor); grad.addColorStop(0.5, rightColor); grad.addColorStop(1, rightColor);
+      gctx.fillStyle = grad; gctx.fillRect(0, 0, TARGET_W, TARGET_H);
+      gctx.drawImage(styledImg, drawX, 0, drawW, TARGET_H);
+      extendedImg = await loadImage(gCanvas.toDataURL('image/png'));
+    } else {
+      const padDataUrl = padCanvas.toDataURL('image/png');
+      const extendPrompt = BACKGROUND_PROMPTS[selectedBackground] || BACKGROUND_PROMPTS.extend;
+      const extendedSrc = await callAgnes(apiKey, padDataUrl, extendPrompt, '2K', '21:9');
+      extendedImg = await loadImage(extendedSrc);
+    }
+    setRow('rowExtend','done');
+
+    setRow('rowFinal','active');
+    const finalCanvas = newCanvas(TARGET_W, TARGET_H); const fctx = finalCanvas.getContext('2d');
+    const s = Math.max(TARGET_W/extendedImg.width, TARGET_H/extendedImg.height);
+    const fw = extendedImg.width*s, fh = extendedImg.height*s;
+    fctx.drawImage(extendedImg, (TARGET_W-fw)/2, (TARGET_H-fh)/2, fw, fh);
+    const outputCanvas = borderMode !== 'off'
+      ? addFadeBorder(finalCanvas, Number(borderSlider.value), Number(irregularSlider.value)/100 * 1.1, BORDER_COLORS[borderMode])
+      : finalCanvas;
+    const finalDataUrl = outputCanvas.toDataURL('image/png');
+    document.getElementById('resultImg').src = finalDataUrl;
+    document.getElementById('dlBtn').href = finalDataUrl;
+    document.getElementById('resultWrap').classList.add('show');
+    setRow('rowFinal','done');
+
+  } catch (err){
+    console.error(err);
+    showError('生成失敗：' + err.message);
+  } finally {
+    runBtn.disabled = false;
+  }
+}
+</script>
+</body>
+</html>
